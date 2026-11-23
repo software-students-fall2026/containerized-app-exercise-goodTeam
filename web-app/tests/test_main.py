@@ -1,6 +1,7 @@
 """Tests for the web app."""
 
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 import mongomock
 import requests
@@ -8,18 +9,15 @@ import requests
 from app import main
 
 
-class FakeResponse:
-    """Minimal stand-in for a requests response."""
+def fake_response(payload=None, error=None):
+    """Return a stand-in for a requests response."""
 
-    def __init__(self, payload=None, error=None):
-        self.payload = payload
-        self.error = error
+    def json():
+        if error:
+            raise error
+        return payload
 
-    def json(self):
-        """Return the payload or raise the configured error."""
-        if self.error:
-            raise self.error
-        return self.payload
+    return SimpleNamespace(json=json)
 
 
 def add_document(database, message, minute):
@@ -80,7 +78,7 @@ def test_index_limits_to_ten_documents(client, database, monkeypatch):
 def test_check_ml_client_ok(monkeypatch):
     """A healthy ML client reports its status."""
     monkeypatch.setattr(
-        main.requests, "get", lambda url, timeout: FakeResponse({"status": "ok"})
+        main.requests, "get", lambda url, timeout: fake_response({"status": "ok"})
     )
     assert main.check_ml_client("http://ml") == "ok"
 
@@ -91,7 +89,7 @@ def test_check_ml_client_requests_health_endpoint(monkeypatch):
 
     def fake_get(url, timeout):
         calls.append((url, timeout))
-        return FakeResponse({"status": "ok"})
+        return fake_response({"status": "ok"})
 
     monkeypatch.setattr(main.requests, "get", fake_get)
     main.check_ml_client("http://ml:8000")
@@ -100,7 +98,7 @@ def test_check_ml_client_requests_health_endpoint(monkeypatch):
 
 def test_check_ml_client_unknown_without_status(monkeypatch):
     """A reply without a status field is reported as unknown."""
-    monkeypatch.setattr(main.requests, "get", lambda url, timeout: FakeResponse({}))
+    monkeypatch.setattr(main.requests, "get", lambda url, timeout: fake_response({}))
     assert main.check_ml_client("http://ml") == "unknown"
 
 
@@ -119,7 +117,7 @@ def test_check_ml_client_unreachable_on_bad_json(monkeypatch):
     monkeypatch.setattr(
         main.requests,
         "get",
-        lambda url, timeout: FakeResponse(error=ValueError("not json")),
+        lambda url, timeout: fake_response(error=ValueError("not json")),
     )
     assert main.check_ml_client("http://ml") == "unreachable"
 

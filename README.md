@@ -85,18 +85,21 @@ Both read `MONGO_URI` from the root `.env`. The web app runs on :5000 locally an
 - Call tools as `.venv/bin/<tool>` so you always use that folder's venv.
 - New package: add it to the right file, reinstall, then `docker compose up --build`.
 
-## Test
+## Format, lint, test
+
+Run from `machine-learning-client/` or `web-app/` before opening a PR:
 
 ```bash
-cd machine-learning-client    # or web-app
-.venv/bin/pytest
+.venv/bin/black .                    # format (rewrites files)
+.venv/bin/black --check .            # check only, same as CI
+.venv/bin/pylint --recursive=y .     # lint
+.venv/bin/pytest                     # tests + coverage, fails below 80%
 ```
 
-Runs with coverage and fails below 80%. For an HTML report: `.venv/bin/pytest --cov-report=html`, then open `htmlcov/index.html`.
+CI (`.github/workflows/lint.yml`) runs the black check and pylint on Python 3.12. Config is in each folder's `.pylintrc`; black and pylint are pinned in `requirements-dev.txt`.
 
 ## Troubleshooting
 
-- **Port already in use:** change `WEB_APP_PORT` or `ML_CLIENT_PORT`. macOS AirPlay uses :5000, hence 5001. A second Mongo on :27017 needs a different host port (`-p 27018:27017`, update `MONGO_URI`).
 - **Auth fails after changing credentials:** Mongo only applies them to an empty volume. Run `docker compose down -v`.
 - **Compose says a variable "is not set":** `.env` is missing values; compare it with `env.example`.
 - **Web app shows `unreachable`:** ML client is down; check `docker compose logs ml-client`.
