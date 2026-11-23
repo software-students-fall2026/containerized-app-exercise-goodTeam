@@ -4,9 +4,12 @@
 
 Build a containerized app that uses machine learning. See [instructions](./instructions.md) for details.
 
-## Configuration
+## Prerequisites
 
-Copy the example file and edit it if needed. `.env` is git-ignored.
+- [Docker](https://docs.docker.com/get-docker/)
+- Python 3.12+ (only for running a service outside Docker)
+
+## Configuration
 
 ```bash
 cp env.example .env
@@ -18,6 +21,7 @@ cp env.example .env
 | `MONGO_DB` | Database name |
 | `MONGO_URI` | URI used when running a service directly on your machine |
 | `WEB_APP_PORT` / `ML_CLIENT_PORT` | Host ports |
+| `ML_CLIENT_URL` | Where the web app finds the ML client (default `http://localhost:8000`) |
 
 ## Running
 
@@ -31,7 +35,7 @@ docker run -d --name focuscam-mongo -p 27017:27017 \
   mongo
 ```
 
-If port 27017 is already in use, change the host side of `-p` (for example `27018:27017`) and use that port in `MONGO_URI`. The named volume keeps data across container restarts and removals.
+If port 27017 is already in use, change the host side of `-p` (for example `27018:27017`) and use that port in the URIs below. The named volume keeps data across container restarts and removals.
 
 ### 2. Run the machine learning client
 
@@ -44,9 +48,6 @@ docker run -d --name ml-client -p 8000:8000 \
   -e MONGO_URI="mongodb://admin:secret@host.docker.internal:27017/focuscam?authSource=admin" \
   focuscam-ml-client
 ```
-
-Inside a container, `localhost` refers to the container itself, so the URI uses `host.docker.internal` to reach MongoDB on the host. On Linux, add `--add-host=host.docker.internal:host-gateway`.
-
 **Locally:**
 
 ```bash
@@ -56,9 +57,27 @@ python3 -m venv .venv
 .venv/bin/python -m app.main
 ```
 
-The local run reads `MONGO_URI` from the `.env` file at the repo root.
+### 3. Run the web app
 
-### 3. Verify
+**In Docker:**
+
+```bash
+cd web-app
+docker build -t focuscam-web-app .
+docker run -d --name web-app -p 5001:5000 \
+  -e MONGO_URI="mongodb://admin:secret@host.docker.internal:27017/focuscam?authSource=admin" \
+  -e ML_CLIENT_URL="http://host.docker.internal:8000" \
+  focuscam-web-app
+```
+**Locally:**
+
+```bash
+cd web-app
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python -m app.main
+```
+### 4. Verify
 
 ```bash
 curl localhost:8000/health
@@ -69,11 +88,8 @@ docker exec focuscam-mongo mongosh -u admin -p secret \
   --eval 'db.getCollection("hello").find().toArray()'
 ```
 
-On startup the client inserts one document into the `hello` collection, so the second command should list it.
-
 ### Cleanup
 
 ```bash
-docker rm -f ml-client focuscam-mongo
+docker rm -f web-app ml-client focuscam-mongo
 docker volume rm focuscam-mongo-data   # also deletes the stored data
-```
