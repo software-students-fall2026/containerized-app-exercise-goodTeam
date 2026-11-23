@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>FocusCam</title>
+</head>
+<body>
+  <h1>FocusCam</h1>
+
+  <h2>ML client</h2>
+  <p>Status: <strong>{{ ml_status }}</strong></p>
+
+  <h2>Documents in MongoDB</h2>
+  {% if docs %}
+  <ul>
+    {% for doc in docs %}
+    <li>{{ doc.source }}: {{ doc.message }} ({{ doc.created_at }})</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p>No documents yet.</p>
+  {% endif %}
+</body>
+</html>

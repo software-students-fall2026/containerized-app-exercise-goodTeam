@@ -1,0 +1,6 @@
+[MAIN]
+py-version=3.12
+ignore=.venv
+
+[FORMAT]
+max-line-length=88
