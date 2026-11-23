@@ -5,6 +5,8 @@
 Build a containerized app that uses machine learning. See [instructions](./instructions.md) for details.
 
 # FocusCam
+[![ML client](https://github.com/software-students-fall2026/containerized-app-exercise-goodTeam/actions/workflows/ml-client.yml/badge.svg)](https://github.com/software-students-fall2026/containerized-app-exercise-goodTeam/actions/workflows/ml-client.yml)
+[![Web app](https://github.com/software-students-fall2026/containerized-app-exercise-goodTeam/actions/workflows/web-app.yml/badge.svg)](https://github.com/software-students-fall2026/containerized-app-exercise-goodTeam/actions/workflows/web-app.yml)
 
 Tracks how focused a student is during a study session. A machine learning client analyzes webcam data, MongoDB stores the results, and a Flask web app shows them.
 
