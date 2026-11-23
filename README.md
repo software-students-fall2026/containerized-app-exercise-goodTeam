@@ -8,7 +8,7 @@ Build a containerized app that uses machine learning. See [instructions](./instr
 
 Tracks how focused a student is during a study session. A machine learning client analyzes webcam data, MongoDB stores the results, and a Flask web app shows them.
 
-Currently dummy services wired together through MongoDB.
+Currently dummy services wired together through MongoDB. See [plan.md](./plan.md).
 
 | Subsystem | Directory |
 |---|---|
@@ -59,7 +59,7 @@ docker compose down -v     # deletes data
 
 Data lives in the `mongo-data` volume.
 
-## Run one service outside Docker
+## Develop outside Docker
 
 Compose doesn't publish Mongo, so start a standalone one:
 
@@ -70,18 +70,33 @@ docker run -d --name focuscam-mongo -p 27017:27017 \
   -e MONGO_INITDB_ROOT_PASSWORD=secret mongo
 ```
 
-Then, from `machine-learning-client/` or `web-app/`:
+Then, from `machine-learning-client/` or `web-app/` (each has its own venv):
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -r requirements-dev.txt
 .venv/bin/python -m app.main
 ```
 
 Both read `MONGO_URI` from the root `.env`. The web app runs on :5000 locally and finds the ML client at `http://localhost:8000` unless `ML_CLIENT_URL` is set.
 
+- `requirements.txt`: runtime dependencies, installed in the Docker image.
+- `requirements-dev.txt`: adds test and lint tools; includes `requirements.txt`.
+- Call tools as `.venv/bin/<tool>` so you always use that folder's venv.
+- New package: add it to the right file, reinstall, then `docker compose up --build`.
+
+## Test
+
+```bash
+cd machine-learning-client    # or web-app
+.venv/bin/pytest
+```
+
+Runs with coverage and fails below 80%. For an HTML report: `.venv/bin/pytest --cov-report=html`, then open `htmlcov/index.html`.
+
 ## Troubleshooting
 
+- **Port already in use:** change `WEB_APP_PORT` or `ML_CLIENT_PORT`. macOS AirPlay uses :5000, hence 5001. A second Mongo on :27017 needs a different host port (`-p 27018:27017`, update `MONGO_URI`).
 - **Auth fails after changing credentials:** Mongo only applies them to an empty volume. Run `docker compose down -v`.
 - **Compose says a variable "is not set":** `.env` is missing values; compare it with `env.example`.
 - **Web app shows `unreachable`:** ML client is down; check `docker compose logs ml-client`.
