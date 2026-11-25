@@ -4,3 +4,6 @@ ignore=.venv
 
 [FORMAT]
 max-line-length=88
+
+[TYPECHECK]
+generated-members=cv2.*
